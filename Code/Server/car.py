@@ -119,29 +119,32 @@ class Car:
             # Print the distance
             print("car_mode_clamp_up distance:", distance)
             # Control motor based on distance
+            # Widened grab window from 7.5-7.7 cm (too narrow) to 6.5-9.5 cm
             if distance <= 5:
-                self.motor.setMotorModel(-1200, -1200)  # Move backward slowly
-            elif distance > 5 and distance < 7.5:
-                self.motor.setMotorModel(-800, -800)    # Move backward faster
-            elif distance >= 7.5 and distance <= 7.7:
-                self.motor.setMotorModel(0, 0)          # Stop motor
-                # Adjust servos to clamp up
+                self.motor.setMotorModel(-1200, -1200)  # Too close — back up fast
+            elif distance > 5 and distance < 6.5:
+                self.motor.setMotorModel(-800, -800)    # Slightly too close — creep back
+            elif distance >= 6.5 and distance <= 9.5:
+                self.motor.setMotorModel(0, 0)          # Stop motor — in grab range
+                # Lower arm (140 → 90)
                 for i in range(140, 90, -1):
                     self.servo.setServoAngle('1', i)
                     time.sleep(0.01)
+                # Close gripper (90 → 130); tune GRIPPER_CLOSED if grip is too tight/loose
                 for i in range(90, 130, 1):
                     self.servo.setServoAngle('0', i)
-                    time.sleep(0.01)  
+                    time.sleep(0.01)
+                # Lift arm (90 → 140)
                 for i in range(90, 140, 1):
                     self.servo.setServoAngle('1', i)
                     time.sleep(0.01)
                 self.clamp_mode = 0                     # Reset clamp mode
-            elif distance > 7.7 and distance < 11:
+            elif distance > 9.5 and distance < 13:
                 self.motor.setMotorModel(800, 800)      # Move forward slowly
-            elif distance >= 11:
+            elif distance >= 13:
                 self.motor.setMotorModel(1200, 1200)    # Move forward quickly
             # Sleep for a short duration
-            time.sleep(0.05) 
+            time.sleep(0.05)
 
     def mode_clamp_down(self):
         # Perform clamp down operation if clamp mode is 2

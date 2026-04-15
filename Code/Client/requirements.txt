@@ -1,0 +1,43 @@
+# ============================================================
+# Freenove Tank Robot — Python dependencies
+# Install on the Raspberry Pi:
+#   pip install -r requirements.txt
+#
+# Some packages (picamera2, gpiozero, lgpio, rpi-hardware-pwm)
+# are best installed via apt on Raspberry Pi OS rather than pip.
+# Apt equivalents are noted inline.
+# ============================================================
+
+# ── Computer vision ──────────────────────────────────────────
+# apt: python3-opencv
+opencv-python>=4.5.0
+numpy>=1.21.0
+
+# ── Raspberry Pi camera (Pi Camera Module 2 / 3) ────────────
+# apt: python3-picamera2
+picamera2>=0.3.9
+
+# ── GPIO / hardware control ──────────────────────────────────
+# apt: python3-gpiozero
+gpiozero>=1.6.2
+
+# Raspberry Pi 5 GPIO backend (replaces RPi.GPIO on Pi 5)
+# apt: python3-lgpio
+lgpio>=0.2.0
+
+# Hardware PWM for servo control (PCB v2)
+rpi-hardware-pwm>=0.1.4
+
+# pigpio — alternative PWM backend (requires `sudo pigpiod` daemon)
+pigpio>=1.78
+
+# ── GUI client (Main.py / Client_Ui.py) ─────────────────────
+# apt: python3-pyqt5
+PyQt5>=5.15.0
+
+# Image decoding in Video.py streaming client
+Pillow>=9.0.0
+
+# ── Standard library extras (usually pre-installed) ─────────
+# These are included so a fresh venv gets everything:
+setuptools>=60.0.0
