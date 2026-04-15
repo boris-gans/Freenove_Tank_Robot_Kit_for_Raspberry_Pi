@@ -120,8 +120,8 @@ class Servo:
     def angle_range(self, channel, init_angle):
         # Ensure the angle is within the valid range for the specified channel
         if channel == '0':
-            if init_angle < 90:
-                init_angle = 90  # Minimum angle for channel 0
+            if init_angle < 40:
+                init_angle = 40  # Minimum angle for channel 0
             elif init_angle > 150:
                 init_angle = 150  # Maximum angle for channel 0
         elif channel == '1':
