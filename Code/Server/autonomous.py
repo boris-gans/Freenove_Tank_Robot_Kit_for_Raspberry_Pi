@@ -101,50 +101,38 @@ class AutonomousRobot(Car):
     def _arm_ready(self):
         """Move to starting position: arm up, gripper open."""
         self.servo.setServoAngle('1', ARM_UP)
-        time.sleep(0.3)
+        time.sleep(1.0)
         self.servo.setServoAngle('0', GRIPPER_OPEN)
-        time.sleep(0.3)
+        time.sleep(0.5)
 
     def _arm_grab(self):
         """Full grab sequence: lower arm → close gripper → lift arm."""
         print("[arm] Lowering arm...")
-        for angle in range(ARM_UP, ARM_DOWN - 1, -1):
-            self.servo.setServoAngle('1', angle)
-            time.sleep(0.01)
-        time.sleep(0.15)
+        self.servo.setServoAngle('1', ARM_DOWN)
+        time.sleep(1.2)   # wait for servo to physically reach position
 
         print("[arm] Closing gripper...")
-        for angle in range(GRIPPER_OPEN, GRIPPER_CLOSED + 1):
-            self.servo.setServoAngle('0', angle)
-            time.sleep(0.01)
-        time.sleep(0.2)
+        self.servo.setServoAngle('0', GRIPPER_CLOSED)
+        time.sleep(0.8)   # wait for gripper to close
 
         print("[arm] Lifting arm...")
-        for angle in range(ARM_DOWN, ARM_UP + 1):
-            self.servo.setServoAngle('1', angle)
-            time.sleep(0.01)
-        time.sleep(0.3)
+        self.servo.setServoAngle('1', ARM_UP)
+        time.sleep(1.2)   # wait for arm to fully raise
         print("[arm] Grab complete.")
 
     def _arm_release(self):
         """Full release sequence: lower arm → open gripper → lift arm."""
         print("[arm] Lowering arm for release...")
-        for angle in range(ARM_UP, ARM_DOWN - 1, -1):
-            self.servo.setServoAngle('1', angle)
-            time.sleep(0.01)
-        time.sleep(0.15)
+        self.servo.setServoAngle('1', ARM_DOWN)
+        time.sleep(1.2)
 
         print("[arm] Opening gripper...")
-        for angle in range(GRIPPER_CLOSED, GRIPPER_OPEN - 1, -1):
-            self.servo.setServoAngle('0', angle)
-            time.sleep(0.01)
-        time.sleep(0.2)
+        self.servo.setServoAngle('0', GRIPPER_OPEN)
+        time.sleep(0.8)
 
         print("[arm] Lifting arm...")
-        for angle in range(ARM_DOWN, ARM_UP + 1):
-            self.servo.setServoAngle('1', angle)
-            time.sleep(0.01)
-        time.sleep(0.3)
+        self.servo.setServoAngle('1', ARM_UP)
+        time.sleep(1.2)
         print("[arm] Release complete.")
 
     # -----------------------------------------------------------------------
