@@ -28,10 +28,10 @@ from car import Car
 # ---------------------------------------------------------------------------
 
 # Servo angles (set during calibration, see current.md)
-GRIPPER_OPEN   = 90    # Servo 0: fully open
-GRIPPER_CLOSED = 130   # Servo 0: gripping — lower if crushing, raise if dropping
-ARM_DOWN       = 90    # Servo 1: lowered to floor level
-ARM_UP         = 140   # Servo 1: raised for transport — raise if not lifting enough
+GRIPPER_OPEN   = 50    # Servo 0: fully open
+GRIPPER_CLOSED = 90   # Servo 0: gripping — lower if crushing, raise if dropping
+ARM_DOWN       = 40    # Servo 1: lowered to floor level
+ARM_UP         = 90   # Servo 1: raised for transport — raise if not lifting enough
 
 # Camera / vision
 FRAME_W = 320
