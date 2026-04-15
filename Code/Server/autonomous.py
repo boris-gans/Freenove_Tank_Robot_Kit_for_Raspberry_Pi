@@ -99,25 +99,31 @@ class AutonomousRobot(Car):
     # -----------------------------------------------------------------------
 
     def _arm_ready(self):
-        """Move to starting position: arm up, gripper open."""
+        """Force a known safe state on startup: arm up, gripper closed."""
+        print("[arm] Homing to known state: arm up, gripper closed...")
         self.servo.setServoAngle('1', ARM_UP)
-        time.sleep(1.0)
-        self.servo.setServoAngle('0', GRIPPER_OPEN)
-        time.sleep(0.5)
+        time.sleep(1.2)
+        self.servo.setServoAngle('0', GRIPPER_CLOSED)
+        time.sleep(0.8)
+        print("[arm] Home position reached.")
 
     def _arm_grab(self):
-        """Full grab sequence: lower arm → close gripper → lift arm."""
+        """Full grab sequence: open gripper → lower arm → close gripper → lift arm."""
+        print("[arm] Opening gripper...")
+        self.servo.setServoAngle('0', GRIPPER_OPEN)
+        time.sleep(0.8)
+
         print("[arm] Lowering arm...")
         self.servo.setServoAngle('1', ARM_DOWN)
-        time.sleep(1.2)   # wait for servo to physically reach position
+        time.sleep(1.2)
 
         print("[arm] Closing gripper...")
         self.servo.setServoAngle('0', GRIPPER_CLOSED)
-        time.sleep(0.8)   # wait for gripper to close
+        time.sleep(0.8)
 
         print("[arm] Lifting arm...")
         self.servo.setServoAngle('1', ARM_UP)
-        time.sleep(1.2)   # wait for arm to fully raise
+        time.sleep(1.2)
         print("[arm] Grab complete.")
 
     def _arm_release(self):
