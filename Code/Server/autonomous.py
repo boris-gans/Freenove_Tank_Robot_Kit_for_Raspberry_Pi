@@ -61,10 +61,10 @@ OBSTACLE_WARN_CM = 30    # start evasion
 SAFE_CM          = 50    # clear of obstacle
 
 # Motor speeds
-SPD_FWD    = 1200
-SPD_SLOW   = 700
-SPD_TURN   = 1500
-SPD_SEARCH = 600
+SPD_FWD    = 700
+SPD_SLOW   = 450
+SPD_TURN   = 900
+SPD_SEARCH = 400
 
 
 class AutonomousRobot(Car):
@@ -87,7 +87,7 @@ class AutonomousRobot(Car):
         self._evade_timer = 0.0
 
         # Camera (JPEG streaming mode, decoded per-frame)
-        self.cam = Camera(stream_size=(FRAME_W, FRAME_H))
+        self.cam = Camera(stream_size=(FRAME_W, FRAME_H), hflip=True, vflip=True)
         self.cam.start_stream()
         print("[init] Camera started.")
 
@@ -206,10 +206,10 @@ class AutonomousRobot(Car):
         """IR-based line following. Maps sensor bitmask to motor commands."""
         v = self.infrared.read_all_infrared()
         if   v == 2: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)    # centre on line
-        elif v == 4: self.motor.setMotorModel(-SPD_TURN,  2500)        # line right → turn right
-        elif v == 6: self.motor.setMotorModel(-2000,      4000)        # strong right
-        elif v == 1: self.motor.setMotorModel( 2500,     -SPD_TURN)    # line left → turn left
-        elif v == 3: self.motor.setMotorModel( 4000,     -2000)        # strong left
+        elif v == 4: self.motor.setMotorModel(-SPD_TURN,  1400)        # line right → turn right
+        elif v == 6: self.motor.setMotorModel(-1200,      2200)        # strong right
+        elif v == 1: self.motor.setMotorModel( 1400,     -SPD_TURN)    # line left → turn left
+        elif v == 3: self.motor.setMotorModel( 2200,     -1200)        # strong left
         elif v == 7: self.motor.setMotorModel( 0,         0)           # all sensors: stop
         # v == 0: no line detected — keep last command (do nothing)
 
@@ -239,11 +239,11 @@ class AutonomousRobot(Car):
     # Steps: 0=reverse, 1=turn-left, 2=forward, 3=turn-right, 4=re-align
     _EVADE_ACTIONS = [
         # (left, right, duration_s)
-        (-1200, -1200, 0.35),   # 0: reverse
-        (-SPD_TURN, SPD_TURN, 0.55),  # 1: turn left
-        ( SPD_FWD,  SPD_FWD,  0.65),  # 2: forward past obstacle
-        ( SPD_TURN, -SPD_TURN, 0.50),  # 3: turn right to re-align
-        ( SPD_FWD,  SPD_FWD,  0.30),  # 4: small forward to re-acquire line
+        (-700, -700, 0.35),          # 0: reverse
+        (-SPD_TURN, SPD_TURN, 0.55), # 1: turn left
+        ( SPD_FWD,  SPD_FWD,  0.65), # 2: forward past obstacle
+        ( SPD_TURN, -SPD_TURN, 0.50),# 3: turn right to re-align
+        ( SPD_FWD,  SPD_FWD,  0.30), # 4: small forward to re-acquire line
     ]
 
     def _run_evade_step(self):
