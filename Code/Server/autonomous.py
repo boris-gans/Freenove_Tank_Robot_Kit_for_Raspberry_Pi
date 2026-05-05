@@ -244,21 +244,21 @@ class AutonomousRobot(Car):
             self._last_line_side = "R"; self._lost_at = None
         elif v in (4, 6):
             self._last_line_side = "L"; self._lost_at = None
-        elif v in (2, 7):
+        elif v == 2:
             self._last_line_side = "C"; self._lost_at = None
+        elif v == 7:
+            # Perpendicular crossbar / intersection — not lost, but no side info
+            self._lost_at = None
 
-        # Differential-drive corrections: both wheels always go forward, turns
-        # come from wheel-speed differential. Keeps forward progress through
-        # rapid v transitions instead of spinning in place.
-        # On this track v=2 never fires (line is wider than sensor spacing),
-        # so v=7 is the de-facto centred state and v=6 / v=3 are the common
-        # slight-off states — graded smaller than v=4 / v=1 (line at edge).
-        if   v == 2: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)     # centred — fwd
-        elif v == 4: self.motor.setMotorModel( 300,       SPD_FWD)     # line far left — strong left bias
-        elif v == 6: self.motor.setMotorModel( 700,       SPD_FWD)     # line slightly left — mild left bias
-        elif v == 1: self.motor.setMotorModel( SPD_FWD,   300)         # line far right — strong right bias
-        elif v == 3: self.motor.setMotorModel( SPD_FWD,   700)         # line slightly right — mild right bias
-        elif v == 7: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)     # all 3 see line — centred, fwd
+        # Thin-line convention: v == 2 is centred (only middle sensor on line)
+        # and v == 7 is a perpendicular crossbar / stop marker. Turn commands
+        # are spin-in-place at the original magnitudes.
+        if   v == 2: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)     # centre on line
+        elif v == 4: self.motor.setMotorModel(-SPD_TURN,  1400)        # mild left
+        elif v == 6: self.motor.setMotorModel(-1200,      2200)        # sharp left
+        elif v == 1: self.motor.setMotorModel( 1400,     -SPD_TURN)    # mild right
+        elif v == 3: self.motor.setMotorModel( 2200,     -1200)        # sharp right
+        elif v == 7: self.motor.setMotorModel( 0,         0)           # all 3 — stop (intersection)
         elif v == 0:
             # Lost the line — search by pivoting toward where we last saw it.
             if self._lost_at is None:
