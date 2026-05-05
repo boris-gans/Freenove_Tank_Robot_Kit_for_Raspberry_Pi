@@ -204,21 +204,26 @@ class AutonomousRobot(Car):
         """IR-based line following with search recovery when the line is lost."""
         v = self.infrared.read_all_infrared()
 
+        # Diagnostic: print on every transition so we can see real sensor patterns
+        if v != getattr(self, '_last_v', -1):
+            print(f"[line] v={v}")
+            self._last_v = v
+
         # Track last-known side so we can pivot back toward it when v == 0.
         # Bit layout from infrared.read_all_infrared: IR1=left, IR2=mid, IR3=right.
         if v in (1, 3):
             self._last_line_side = "R"; self._lost_at = None
         elif v in (4, 6):
             self._last_line_side = "L"; self._lost_at = None
-        elif v == 2:
+        elif v in (2, 7):
             self._last_line_side = "C"; self._lost_at = None
 
-        if   v == 2: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)    # centre on line
+        if   v == 2: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)     # centre on line
         elif v == 4: self.motor.setMotorModel(-SPD_TURN,  1400)        # line on left → turn left
         elif v == 6: self.motor.setMotorModel(-1200,      2200)        # strong left
         elif v == 1: self.motor.setMotorModel( 1400,     -SPD_TURN)    # line on right → turn right
         elif v == 3: self.motor.setMotorModel( 2200,     -1200)        # strong right
-        elif v == 7: self.motor.setMotorModel( 0,         0)           # all sensors: stop
+        elif v == 7: self.motor.setMotorModel( SPD_SLOW,  SPD_SLOW)    # all 3 see line — thick line/centred, fwd
         elif v == 0:
             # Lost the line — search by pivoting toward where we last saw it.
             if self._lost_at is None:
