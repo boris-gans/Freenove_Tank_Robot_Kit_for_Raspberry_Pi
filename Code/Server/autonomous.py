@@ -86,6 +86,10 @@ class AutonomousRobot(Car):
         self._evade_step  = 0
         self._evade_timer = 0.0
 
+        # Line-search recovery state
+        self._last_line_side = None   # "L", "R", "C", or None
+        self._lost_at        = None   # timestamp when the line was first lost
+
         # Camera (JPEG streaming mode, decoded per-frame)
         self.cam = Camera(stream_size=(FRAME_W, FRAME_H), hflip=True, vflip=True)
         self.cam.start_stream()
@@ -197,15 +201,43 @@ class AutonomousRobot(Car):
     # -----------------------------------------------------------------------
 
     def _follow_line(self):
-        """IR-based line following. Maps sensor bitmask to motor commands."""
+        """IR-based line following with search recovery when the line is lost."""
         v = self.infrared.read_all_infrared()
+
+        # Track last-known side so we can pivot back toward it when v == 0.
+        # Bit layout from infrared.read_all_infrared: IR1=left, IR2=mid, IR3=right.
+        if v in (1, 3):
+            self._last_line_side = "R"; self._lost_at = None
+        elif v in (4, 6):
+            self._last_line_side = "L"; self._lost_at = None
+        elif v == 2:
+            self._last_line_side = "C"; self._lost_at = None
+
         if   v == 2: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)    # centre on line
-        elif v == 4: self.motor.setMotorModel(-SPD_TURN,  1400)        # line right → turn right
-        elif v == 6: self.motor.setMotorModel(-1200,      2200)        # strong right
-        elif v == 1: self.motor.setMotorModel( 1400,     -SPD_TURN)    # line left → turn left
-        elif v == 3: self.motor.setMotorModel( 2200,     -1200)        # strong left
+        elif v == 4: self.motor.setMotorModel(-SPD_TURN,  1400)        # line on left → turn left
+        elif v == 6: self.motor.setMotorModel(-1200,      2200)        # strong left
+        elif v == 1: self.motor.setMotorModel( 1400,     -SPD_TURN)    # line on right → turn right
+        elif v == 3: self.motor.setMotorModel( 2200,     -1200)        # strong right
         elif v == 7: self.motor.setMotorModel( 0,         0)           # all sensors: stop
-        elif v == 0: self.motor.setMotorModel(SPD_SEARCH, SPD_SEARCH)  # off line — creep fwd to re-acquire
+        elif v == 0:
+            # Lost the line — search by pivoting toward where we last saw it.
+            if self._lost_at is None:
+                self._lost_at = time.time()
+            elapsed = time.time() - self._lost_at
+
+            if elapsed > 5.0:
+                # Give up after ~5 s of fruitless searching
+                self.motor.setMotorModel(0, 0)
+            elif self._last_line_side == "L":
+                self.motor.setMotorModel(-SPD_TURN, SPD_TURN)    # pivot left
+            elif self._last_line_side == "R":
+                self.motor.setMotorModel( SPD_TURN, -SPD_TURN)   # pivot right
+            elif elapsed < 0.4:
+                # Was centred or no history — creep forward briefly first
+                self.motor.setMotorModel(SPD_SEARCH, SPD_SEARCH)
+            else:
+                # …then sweep left as a default search direction
+                self.motor.setMotorModel(-SPD_TURN, SPD_TURN)
 
     def _approach_ball(self, ball):
         """
