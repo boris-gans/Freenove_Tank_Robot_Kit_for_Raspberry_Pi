@@ -218,12 +218,18 @@ class AutonomousRobot(Car):
         elif v in (2, 7):
             self._last_line_side = "C"; self._lost_at = None
 
-        if   v == 2: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)     # centre on line
-        elif v == 4: self.motor.setMotorModel(-SPD_TURN,  1400)        # line on left → turn left
-        elif v == 6: self.motor.setMotorModel(-1200,      2200)        # strong left
-        elif v == 1: self.motor.setMotorModel( 1400,     -SPD_TURN)    # line on right → turn right
-        elif v == 3: self.motor.setMotorModel( 2200,     -1200)        # strong right
-        elif v == 7: self.motor.setMotorModel( SPD_SLOW,  SPD_SLOW)    # all 3 see line — thick line/centred, fwd
+        # Differential-drive corrections: both wheels always go forward, turns
+        # come from wheel-speed differential. Keeps forward progress through
+        # rapid v transitions instead of spinning in place.
+        # On this track v=2 never fires (line is wider than sensor spacing),
+        # so v=7 is the de-facto centred state and v=6 / v=3 are the common
+        # slight-off states — graded smaller than v=4 / v=1 (line at edge).
+        if   v == 2: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)     # centred — fwd
+        elif v == 4: self.motor.setMotorModel( 300,       SPD_FWD)     # line far left — strong left bias
+        elif v == 6: self.motor.setMotorModel( 700,       SPD_FWD)     # line slightly left — mild left bias
+        elif v == 1: self.motor.setMotorModel( SPD_FWD,   300)         # line far right — strong right bias
+        elif v == 3: self.motor.setMotorModel( SPD_FWD,   700)         # line slightly right — mild right bias
+        elif v == 7: self.motor.setMotorModel( SPD_FWD,   SPD_FWD)     # all 3 see line — centred, fwd
         elif v == 0:
             # Lost the line — search by pivoting toward where we last saw it.
             if self._lost_at is None:
