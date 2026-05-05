@@ -61,10 +61,10 @@ OBSTACLE_WARN_CM = 30    # start evasion
 SAFE_CM          = 50    # clear of obstacle
 
 # Motor speeds
-SPD_FWD    = 800
-SPD_SLOW   = 600
-SPD_TURN   = 600
-SPD_SEARCH = 400
+SPD_FWD    = 1200
+SPD_SLOW   = 800
+SPD_TURN   = 700
+SPD_SEARCH = 500
 
 
 class AutonomousRobot(Car):
@@ -205,7 +205,7 @@ class AutonomousRobot(Car):
         elif v == 1: self.motor.setMotorModel( 1400,     -SPD_TURN)    # line left → turn left
         elif v == 3: self.motor.setMotorModel( 2200,     -1200)        # strong left
         elif v == 7: self.motor.setMotorModel( 0,         0)           # all sensors: stop
-        # v == 0: no line detected — keep last command (do nothing)
+        elif v == 0: self.motor.setMotorModel(SPD_SEARCH, SPD_SEARCH)  # off line — creep fwd to re-acquire
 
     def _approach_ball(self, ball):
         """
@@ -274,11 +274,6 @@ class AutonomousRobot(Car):
         # Kick off evasion with an initial motor command for step 0
         try:
             while True:
-                frame = self._get_frame()
-                if frame is None:
-                    time.sleep(0.03)
-                    continue
-
                 distance = self.sonic.get_distance()   # cm, -1 on error
                 self.frame_count += 1
 
@@ -297,14 +292,16 @@ class AutonomousRobot(Car):
                         print(f"[line] Obstacle at {distance:.1f} cm — evading.")
                         continue
 
-                    # Priority 2 — ball scan (every N frames)
+                    # Priority 2 — ball scan (every N frames; only touch camera when due)
                     if self.frame_count % BALL_SCAN_INTERVAL == 0:
-                        ball = self._detect_red_ball(frame)
-                        if ball:
-                            self.motor.setMotorModel(0, 0)
-                            self.state = self.STATE_FETCH
-                            print(f"[line] Red ball detected (r={ball[2]:.1f}px) — fetching.")
-                            continue
+                        frame = self._get_frame()
+                        if frame is not None:
+                            ball = self._detect_red_ball(frame)
+                            if ball:
+                                self.motor.setMotorModel(0, 0)
+                                self.state = self.STATE_FETCH
+                                print(f"[line] Red ball detected (r={ball[2]:.1f}px) — fetching.")
+                                continue
 
                     self._follow_line()
 
@@ -314,6 +311,10 @@ class AutonomousRobot(Car):
 
                 # ── FETCH ────────────────────────────────────────────────
                 elif self.state == self.STATE_FETCH:
+                    frame = self._get_frame()
+                    if frame is None:
+                        time.sleep(0.03)
+                        continue
                     ball = self._detect_red_ball(frame)
 
                     if ball is None:
@@ -332,7 +333,8 @@ class AutonomousRobot(Car):
 
                 # ── DELIVER ──────────────────────────────────────────────
                 elif self.state == self.STATE_DELIVER:
-                    if self._detect_drop_zone(frame):
+                    frame = self._get_frame()
+                    if frame is not None and self._detect_drop_zone(frame):
                         self.motor.setMotorModel(0, 0)
                         self.state = self.STATE_RELEASE
                         print("[deliver] Drop zone found — releasing.")

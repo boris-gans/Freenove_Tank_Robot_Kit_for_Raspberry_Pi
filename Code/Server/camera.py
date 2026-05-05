@@ -57,10 +57,10 @@ class Camera:
             self.camera.stop_recording()  # Stop the recording or streaming
             self.streaming = False        # Set the streaming flag to False
 
-    def get_frame(self):
+    def get_frame(self, timeout=0.1):
         with self.streaming_output.condition:
-            self.streaming_output.condition.wait()  # Wait for a new frame to be available
-            return self.streaming_output.frame      # Return the current frame
+            self.streaming_output.condition.wait(timeout=timeout)  # Wait up to `timeout` seconds for a new frame
+            return self.streaming_output.frame      # Return the current frame (may be None if no frame has ever arrived)
 
     def save_video(self, filename, duration=10):
         self.start_stream(filename)  # Start the video recording
