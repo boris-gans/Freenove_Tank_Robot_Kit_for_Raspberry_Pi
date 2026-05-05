@@ -38,20 +38,26 @@ FRAME_W = 320
 FRAME_H = 240
 FRAME_CX = FRAME_W // 2
 
-# Red ball HSV ranges — red wraps around 0/180 in HSV
-RED_LOWER1 = np.array([0,   120,  60])
+# Red ball HSV ranges — red wraps around 0/180 in HSV.
+# Saturation/value floors raised vs. defaults so muted reds (skin, wood,
+# clothing) don't trip the detector — only vivid red passes.
+RED_LOWER1 = np.array([0,   150,  90])
 RED_UPPER1 = np.array([10,  255, 255])
-RED_LOWER2 = np.array([170, 120,  60])
+RED_LOWER2 = np.array([170, 150,  90])
 RED_UPPER2 = np.array([180, 255, 255])
 
-# Drop-zone detection: large white/light circle on the floor
-DROP_LOWER = np.array([0,   0, 180])
-DROP_UPPER = np.array([180, 50, 255])
-DROP_PIXEL_RATIO = 0.12    # fraction of frame that must be white to confirm
+# Drop-zone detection: large white circle on the floor.
+# Tighter V floor and a circular-blob check (not just pixel ratio) so a
+# well-lit floor doesn't read as a drop zone.
+DROP_LOWER = np.array([0,   0, 210])
+DROP_UPPER = np.array([180, 40, 255])
+DROP_MIN_AREA    = 6000   # px² — minimum blob area in bottom half
+DROP_CIRCULARITY = 0.65   # contour_area / enclosing_circle_area; 1.0 = perfect circle
 
 # Ball approach thresholds
-BALL_MIN_RADIUS  = 15    # px  — ignore noise below this
+BALL_MIN_RADIUS  = 20    # px  — ignore noise below this
 BALL_GRAB_RADIUS = 62    # px  — close enough to trigger grab
+BALL_CIRCULARITY = 0.65  # contour_area / enclosing_circle_area gate
 
 # Scan for red ball only every N frames while line-following (saves CPU)
 BALL_SCAN_INTERVAL = 5
@@ -159,8 +165,10 @@ class AutonomousRobot(Car):
 
     def _detect_red_ball(self, frame):
         """
-        Returns (cx, cy, radius) of the largest red blob, or None.
-        Uses two HSV ranges to cover both sides of the red hue wrap-around.
+        Returns (cx, cy, radius) of the largest red blob whose shape is
+        roughly circular, or None. Uses two HSV ranges to cover both sides
+        of the red hue wrap-around, and gates on circularity to reject
+        non-ball red regions (clothing, logos, walls).
         """
         blur = cv2.GaussianBlur(frame, (5, 5), 0)
         hsv  = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
@@ -178,6 +186,12 @@ class AutonomousRobot(Car):
         ((x, y), radius) = cv2.minEnclosingCircle(c)
         if radius < BALL_MIN_RADIUS:
             return None
+
+        area = cv2.contourArea(c)
+        circle_area = np.pi * radius * radius
+        if circle_area == 0 or area / circle_area < BALL_CIRCULARITY:
+            return None
+
         M = cv2.moments(c)
         if M["m00"] == 0:
             return None
@@ -187,14 +201,29 @@ class AutonomousRobot(Car):
 
     def _detect_drop_zone(self, frame):
         """
-        Returns True when we're over / right next to the large white drop-zone circle.
-        Checks that a large fraction of the bottom half of the frame is white.
+        Returns True only when the bottom half of the frame contains a
+        single large, roughly circular white blob (the drop-zone marker),
+        not just generally-bright floor.
         """
         bottom = frame[FRAME_H // 2:, :]
         hsv    = cv2.cvtColor(bottom, cv2.COLOR_BGR2HSV)
         mask   = cv2.inRange(hsv, DROP_LOWER, DROP_UPPER)
-        ratio  = cv2.countNonZero(mask) / (bottom.shape[0] * bottom.shape[1])
-        return ratio > DROP_PIXEL_RATIO
+        mask   = cv2.erode(mask,  None, iterations=2)
+        mask   = cv2.dilate(mask, None, iterations=2)
+
+        cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not cnts:
+            return False
+        c = max(cnts, key=cv2.contourArea)
+        area = cv2.contourArea(c)
+        if area < DROP_MIN_AREA:
+            return False
+
+        ((x, y), radius) = cv2.minEnclosingCircle(c)
+        circle_area = np.pi * radius * radius
+        if circle_area == 0 or area / circle_area < DROP_CIRCULARITY:
+            return False
+        return True
 
     # -----------------------------------------------------------------------
     # Motion helpers
