@@ -28,10 +28,10 @@ from car import Car
 # ---------------------------------------------------------------------------
 
 # Servo angles (set during calibration, see current.md)
-GRIPPER_OPEN   = 50    # Servo 0: fully open
-GRIPPER_CLOSED = 90   # Servo 0: gripping — lower if crushing, raise if dropping
+GRIPPER_OPEN   = 90    # Servo 0: fully open
+GRIPPER_CLOSED = 50   # Servo 0: gripping — lower if crushing, raise if dropping
 ARM_DOWN       = 90    # Servo 1: lowered to floor level
-ARM_UP         = 140   # Servo 1: raised for transport — raise if not lifting enough
+ARM_UP         = 160   # Servo 1: raised for transport — raise if not lifting enough
 
 # Camera / vision
 FRAME_W = 320
@@ -50,7 +50,7 @@ DROP_UPPER = np.array([180, 50, 255])
 DROP_PIXEL_RATIO = 0.12    # fraction of frame that must be white to confirm
 
 # Ball approach thresholds
-BALL_MIN_RADIUS  = 12    # px  — ignore noise below this
+BALL_MIN_RADIUS  = 15    # px  — ignore noise below this
 BALL_GRAB_RADIUS = 62    # px  — close enough to trigger grab
 
 # Scan for red ball only every N frames while line-following (saves CPU)
@@ -61,9 +61,9 @@ OBSTACLE_WARN_CM = 30    # start evasion
 SAFE_CM          = 50    # clear of obstacle
 
 # Motor speeds
-SPD_FWD    = 700
-SPD_SLOW   = 450
-SPD_TURN   = 900
+SPD_FWD    = 800
+SPD_SLOW   = 600
+SPD_TURN   = 600
 SPD_SEARCH = 400
 
 
